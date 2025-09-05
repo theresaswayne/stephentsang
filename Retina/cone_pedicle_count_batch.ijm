@@ -26,21 +26,28 @@ roiManager("reset");
 run("Bio-Formats Macro Extensions"); // support native microscope files
 
 getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
+//print(year + "-" + (month+1)+ "-" + dayOfMonth + "_" + hour + "-" + minute);
 
 // ---- Run ----
 
 print("Starting");
 
-
-
 processFolder(inputDir, outputDir, fileSuffix, prominence);
+
+// save results and log with date-timestamp
+
+saveAs("Results", outputDir + File.separator + year + "-" + (month+1)+ "-" + dayOfMonth + "_" + hour + "-" + minute + "_Results.csv" );
+
+selectWindow("Log");
+saveAs("Text", outputDir + File.separator + year + "-" + (month+1)+ "-" + dayOfMonth + "_" + hour + "-" + minute + "_Log.txt");
+
+// ---- Clean up ----
+
 while (nImages > 0) { // clean up open images
 	selectImage(nImages);
 	close(); 
 }
 
-// save results with date-timestamp
-saveAs("Results", outputDir + File.separator + year + month + dayOfMonth + "_" + hour + minute + "_Results.csv" );
 
 run("Clear Results");
 roiManager("reset");
@@ -53,7 +60,7 @@ print("Finished");
 
 function processFolder(input, output, suffix, prominence) {
 	filenum = -1;
-	print("Processing folder", input);
+	print("Processing folder", input, "using maxima prominence",prominence);
 	// scan folder tree to find files with correct suffix
 	list = getFileList(input);
 	list = Array.sort(list);
@@ -62,7 +69,7 @@ function processFolder(input, output, suffix, prominence) {
 			processFolder(input + File.separator + list[i], output, suffix);
 		}
 		if(endsWith(list[i], suffix)) {
-			filenum = filenum + 1;
+			filenum = filenum + 1; // usable files start wtih 0
 			processFile(input, output, list[i], filenum, prominence);
 		}
 	}
@@ -72,7 +79,7 @@ function processFolder(input, output, suffix, prominence) {
 function processFile(inputFolder, outputFolder, fileName, fileNumber, prominence) {
 	
 	path = inputFolder + File.separator + fileName;
-	print("Processing file at path" ,path, "using maxima prominence",prominence);	
+	print("Processing file number",fileNumber," at path" ,path);	
 	
 	roiManager("reset");
 	dotIndex = indexOf(fileName, "."); // limitation -- cannot have >1 dots in the filename
@@ -80,7 +87,7 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, prominence
 	extension = substring(fileName, dotIndex);
 	
 	Ext.setId(path);
-	print("Processing file",fileName, "with basename",basename);
+	//print("Processing file number",fileN, "with basename",basename);
 	startTime = getTime();
 
 	// open only channel 2
@@ -112,26 +119,37 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, prominence
 	roiManager("select", 0);
 	roiManager("rename", "whole tissue");
 	
-	// find maxima
-	selectWindow(title);
-	run("Find Maxima...", "prominence=&prominence output=[Point Selection]");
-	roiManager("Add");
-	roiManager("select", 1);
-	roiManager("rename", "cones");
-	
-	// measure area
+	// measure tissue area
 	selectWindow(title);
 	run("Set Measurements...", "area mean centroid display redirect=None decimal=3");
 	roiManager("Select", 0);
 	roiManager("Measure");
 	
+	// find maxima in original image
+	selectWindow(title);
+	run("Select None");
+	run("Find Maxima...", "prominence=&prominence output=[Point Selection]");
+	roiManager("Add");
+	roiManager("select", 1);
+	roiManager("rename", "cones");
+
 	// *** get point selection properties (count)
-	// *** Add a column to results table to include the count
+	run("Properties... ", "show"); //  show the table of point counts (same as alt-Y)
+	selectWindow("Counts_"+title); 
+	lines = split(getInfo(), "\n");  // store all rows in an array
+	// headings = split(lines[0], "\t"); // store the heading row in an array (optional)
+	counterValues = split(lines[1], "\t");  // store the counter values in an array
 	
+	pointCount = counterValues[1]; // value of the first counter 
+	
+	// *** Add a column to results table to include the count
+	selectWindow("Results");
+	setResult("ConeCount", fileNumber, pointCount);
+	updateResults();
 
 	print("Elapsed time " + (getTime() - startTime) + " msec");
 	
-	// save the ROIs and images
+	// save the ROIs
 
 	roiName = basename+"_RoiSet.zip";
 	roiManager("deselect");
@@ -143,6 +161,9 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, prominence
 	
 	selectWindow("blur");
 	//saveAs("tiff", outputFolder + File.separator + basename + "_blur.tif" );
+	close();
+	
+	selectWindow("Counts"+title);
 	close();
 
 } // process file

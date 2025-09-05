@@ -163,8 +163,8 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, prominence
 	//saveAs("tiff", outputFolder + File.separator + basename + "_blur.tif" );
 	close();
 	
-	selectWindow("Counts"+title);
-	close();
+	selectWindow("Counts_"+title);
+	run("Close");
 
 } // process file
 

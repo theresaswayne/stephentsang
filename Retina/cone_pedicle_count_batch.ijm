@@ -25,6 +25,7 @@ roiManager("reset");
 //setBatchMode(true); // faster performance
 run("Bio-Formats Macro Extensions"); // support native microscope files
 
+getDateAndTime(year, month, dayOfWeek, dayOfMonth, hour, minute, second, msec);
 
 // ---- Run ----
 
@@ -38,8 +39,8 @@ while (nImages > 0) { // clean up open images
 	close(); 
 }
 
-// ** save results with date-timestamp
-saveAs("Results", outputDir + File.separator + "Results.csv" );
+// save results with date-timestamp
+saveAs("Results", outputDir + File.separator + year + month + dayOfMonth + "_" + hour + minute + "_Results.csv" );
 
 run("Clear Results");
 roiManager("reset");

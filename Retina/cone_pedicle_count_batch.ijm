@@ -4,12 +4,26 @@
 // @Double (label = "Maxima Prominence", value = 900) prominence
 
 // cone_pedicle_count_batch
-// Theresa Swayne for Siyuan Liu and Stephen Tsang, 2025
-// 
+// Fiji script to count pedicles in a folder of whole-retina images
+
+// Required input: A multi-channel, single-Z image (or max projection), where pedicles MUST be in channel 2
+// Output: 
+//  For each folder: 
+//	 A Results spreadsheet, where each row represents one image, and the columns are:
+//		measurement number, filename, tissue area in scaled units, number of pedicles detected 
+//   A Log file giving the maxima prominence used, filenames, and time to process each image
+//  For each image: an ROIset (Fiji ROI Manager format) showing the tissue area and detected pedicles. 
+
+// by Theresa Swayne for Siyuan Liu and Stephen Tsang, 2025
+//  -------- Suggested text for acknowledgement -----------
+//   "These studies used the Confocal and Specialized Microscopy Shared Resource 
+//   of the Herbert Irving Comprehensive Cancer Center at Columbia University, 
+//   funded in part through the NIH/NCI Cancer Center Support Grant P30CA013696."
 
 // TO USE: Create a folder for the output files. 
 // 	Run the script in Fiji. 
-//  Limitation -- cannot have >1 dots in the filename
+//  Use the saved ROI set to inspect the results, and adjust the maxima prominence as needed.
+//  Limitation -- Files cannot have >1 dot in the filename
 
 
 // ---- Setup ----
@@ -121,7 +135,7 @@ function processFile(inputFolder, outputFolder, fileName, fileNumber, prominence
 	
 	// measure tissue area
 	selectWindow(title);
-	run("Set Measurements...", "area mean centroid display redirect=None decimal=3");
+	run("Set Measurements...", "area display redirect=None decimal=3");
 	roiManager("Select", 0);
 	roiManager("Measure");
 	
